@@ -24,9 +24,26 @@ steps:
 
 
 
-        $MERGED_BRANCH=$(git -C $(Build.SourcesDirectory) log --merges -n 1 --pretty=format:'%P' | cut -d' ' -f2 | xargs git name-rev --name-only)
-        Write-Host "[INFO] Branch Name? : $MERGED_BRANCH"
-        
+
+
+        $mergeParents = git -C "$(Build.SourcesDirectory)" log --merges -n 1 --pretty=format:'%P'
+
+        # Extract the second parent (the merged branch)
+        $parentCommits = $mergeParents -split " "
+        if ($parentCommits.Length -gt 1) {
+            $mergedCommit = $parentCommits[1]  # Second parent is the source branch
+        } else {
+            $mergedCommit = $parentCommits[0]  # Fallback to first parent
+        }
+
+        # Get the branch name of the merged commit
+        $mergedBranchName = git -C "$(Build.SourcesDirectory)" name-rev --name-only $mergedCommit
+
+        Write-Host "[INFO] Branch Name: $mergedBranchName"
+
+
+
+
 
         # Check if sqlFolder is null, empty, or 'latest'
         if ([string]::IsNullOrWhiteSpace($sqlFolder)) {            
