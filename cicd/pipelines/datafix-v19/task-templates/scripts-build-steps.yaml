@@ -18,6 +18,11 @@ steps:
         # Check if sqlFolder is null, empty, or 'latest'
         if ([string]::IsNullOrWhiteSpace($sqlFolder)) {            
             Write-Host "##vso[task.logissue type=error]SQL folder cannot be empty."
+
+            Write-Host "[Info] Can we get branch name here? it is $(Build.SourceBranchName)"
+
+
+
             exit 1  # Fail the pipeline if the input folder name is null or empty
         }else {
             # If a specific sqlFolder is provided, check if it exists
