@@ -6,12 +6,12 @@ parameters:
 
 
 steps:
-  - checkout: self
-  - script: |
-      MERGED_BRANCH=$(git log --merges -n 1 --pretty=format:'%P' | cut -d' ' -f2 | xargs git name-rev --name-only)
-      # echo "##vso[task.setvariable variable=MergedBranchName]$MERGED_BRANCH"
-      Write-Host "[INFO] Branch Name? : $MERGED_BRANCH"
-    displayName: "Get Merged Branch Name"  
+  # - checkout: self
+  # - script: |
+  #     MERGED_BRANCH=$(git log --merges -n 1 --pretty=format:'%P' | cut -d' ' -f2 | xargs git name-rev --name-only)
+  #     # echo "##vso[task.setvariable variable=MergedBranchName]$MERGED_BRANCH"
+  #     Write-Host "[INFO] Branch Name? : $MERGED_BRANCH"
+  #   displayName: "Get Merged Branch Name"  
 
   - task: PowerShell@2
     displayName: 'Determine the SQL Folder Name'
@@ -21,6 +21,12 @@ steps:
         $sqlFolder = "${{parameters.sqlFolder}}"
         $rootFolder = "$(Build.SourcesDirectory)\sqlscripts"
         Write-Host "[INFO] Provided sqlFolder: $sqlFolder"
+
+
+
+        $MERGED_BRANCH=$(git -C $(Build.SourcesDirectory) log --merges -n 1 --pretty=format:'%P' | cut -d' ' -f2 | xargs git name-rev --name-only)
+        Write-Host "[INFO] Branch Name? : $MERGED_BRANCH"
+        
 
         # Check if sqlFolder is null, empty, or 'latest'
         if ([string]::IsNullOrWhiteSpace($sqlFolder)) {            
