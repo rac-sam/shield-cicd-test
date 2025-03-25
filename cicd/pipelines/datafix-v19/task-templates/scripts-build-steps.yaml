@@ -6,6 +6,13 @@ parameters:
 
 
 steps:
+  - checkout: self
+  - script: |
+      MERGED_BRANCH=$(git log --merges -n 1 --pretty=format:'%P' | cut -d' ' -f2 | xargs git name-rev --name-only)
+      # echo "##vso[task.setvariable variable=MergedBranchName]$MERGED_BRANCH"
+      Write-Host "[INFO] Branch Name? : $MERGED_BRANCH"
+    displayName: "Get Merged Branch Name"  
+
   - task: PowerShell@2
     displayName: 'Determine the SQL Folder Name'
     inputs:
