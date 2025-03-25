@@ -22,24 +22,29 @@ steps:
         $rootFolder = "$(Build.SourcesDirectory)\sqlscripts"
         Write-Host "[INFO] Provided sqlFolder: $sqlFolder"
 
+        $sourceBranch = "${{ variables['System.PullRequest.SourceBranch'] }}"
+
+        Write-Host "[INFO] source beanch1: $(sourceBranch)"
+        Write-Host "[INFO] source beanch2: ${{ variables['System.PullRequest.SourceBranch'] }}"
 
 
-        # Write-Host "[INFO] Branch Name: $(System.PullRequest.SourceBranch)"
 
-        $mergeParents = git -C "$(Build.SourcesDirectory)" log --merges -n 1 --pretty=format:'%P'
+        # # Write-Host "[INFO] Branch Name: $(System.PullRequest.SourceBranch)"
 
-        # Extract the second parent (the merged branch)
-        $parentCommits = $mergeParents -split " "
-        if ($parentCommits.Length -gt 1) {
-            $mergedCommit = $parentCommits[1]  # Second parent is the source branch
-        } else {
-            $mergedCommit = $parentCommits[0]  # Fallback to first parent
-        }
+        # $mergeParents = git -C "$(Build.SourcesDirectory)" log --merges -n 1 --pretty=format:'%P'
 
-        # Get the branch name of the merged commit
-        $mergedBranchName = git -C "$(Build.SourcesDirectory)" name-rev --name-only $mergedCommit
+        # # Extract the second parent (the merged branch)
+        # $parentCommits = $mergeParents -split " "
+        # if ($parentCommits.Length -gt 1) {
+        #     $mergedCommit = $parentCommits[1]  # Second parent is the source branch
+        # } else {
+        #     $mergedCommit = $parentCommits[0]  # Fallback to first parent
+        # }
 
-        Write-Host "[INFO] Branch Name: $mergedBranchName"
+        # # Get the branch name of the merged commit
+        # $mergedBranchName = git -C "$(Build.SourcesDirectory)" name-rev --name-only $mergedCommit
+
+        # Write-Host "[INFO] Branch Name: $mergedBranchName"
 
 
 
