@@ -24,7 +24,7 @@ steps:
 
         $sourceBranch = "${{ variables['System.PullRequest.SourceBranch'] }}"
 
-        Write-Host "[INFO] source beanch1: $(sourceBranch)"
+        # Write-Host "[INFO] source beanch1: $(sourceBranch)"
         Write-Host "[INFO] source beanch2: ${{ variables['System.PullRequest.SourceBranch'] }}"
 
 
