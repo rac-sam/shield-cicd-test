@@ -1,0 +1,209 @@
+parameters:
+  - name: envName
+    type: string
+
+variables:
+  # Global
+  serviceManagementTempBranchPrefix: 'service-management/ado/temp'
+  appReleaseBranchPrefix: 'releases/ado'
+  appReleaseBranchPrefix_online: '$(appReleaseBranchPrefix)/online'
+  appReleaseBranchPrefix_offline: '$(appReleaseBranchPrefix)/offline'
+
+  # SIT
+  ${{ if eq(parameters.envName, 'dev2') }}:
+    envVar_envKey: 'SIT'
+    envVar_portalHostDomain: 'ractest.com.au'
+    envVar_shieldEnvName: 'dev2'
+    envVar_dbHasCluster: false
+    envVar_dbHostname: 'dcc-shdsql-s192'
+    envVar_dbName: 'shield'
+    envVar_argocdAppName: 'shielddev2'
+    envVar_argocdBaseBranch: 'main'
+    envVar_monoPodOnlineReplicaCount: 2
+    envVar_monoPodOnlineEnablePdb: false
+    envVar_monoPodOnlineMinAvailable: 0
+    envVar_monoPodBatchReplicaCount: 1
+    envVar_monoPodWsReplicaCount: 1
+
+  ${{ elseif eq(parameters.envName, 'int2') }}:
+    envVar_envKey: 'SIT'
+    envVar_portalHostDomain: 'ractest.com.au'
+    envVar_shieldEnvName: 'int2'
+    envVar_dbHasCluster: false
+    envVar_dbHostname: 'dcc-shdsql-s193'
+    envVar_dbName: 'shield'
+    envVar_argocdAppName: 'shieldint2'
+    envVar_argocdBaseBranch: 'main'
+    envVar_monoPodOnlineReplicaCount: 2
+    envVar_monoPodOnlineEnablePdb: true
+    envVar_monoPodOnlineMinAvailable: 1
+    envVar_monoPodBatchReplicaCount: 2
+    envVar_monoPodWsReplicaCount: 1
+
+  ${{ elseif eq(parameters.envName, 'conf2') }}:
+    envVar_envKey: 'SIT'
+    envVar_portalHostDomain: 'ractest.com.au'
+    envVar_shieldEnvName: 'conf2'
+    envVar_dbHasCluster: false
+    envVar_dbHostname: 'dcc-shdsql-s191'
+    envVar_dbName: 'shield'
+    envVar_argocdAppName: 'shieldconf2'
+    envVar_argocdBaseBranch: 'main'
+    envVar_monoPodOnlineReplicaCount: 2
+    envVar_monoPodOnlineEnablePdb: true
+    envVar_monoPodOnlineMinAvailable: 1
+    envVar_monoPodBatchReplicaCount: 1
+    envVar_monoPodWsReplicaCount: 1
+
+  ${{ elseif eq(parameters.envName, 'sit5') }}:
+    envVar_envKey: 'SIT'
+    envVar_portalHostDomain: 'ractest.com.au'
+    envVar_shieldEnvName: 'sit5'
+    envVar_dbHasCluster: false
+    envVar_dbHostname: 'dcc-shdsql-s195'
+    envVar_dbName: 'shield'
+    envVar_argocdAppName: 'shieldsit5'
+    envVar_argocdBaseBranch: 'main'
+    envVar_monoPodOnlineReplicaCount: 2
+    envVar_monoPodOnlineEnablePdb: true
+    envVar_monoPodOnlineMinAvailable: 1
+    envVar_monoPodBatchReplicaCount: 1
+    envVar_monoPodWsReplicaCount: 1
+
+  ${{ elseif eq(parameters.envName, 'sit6') }}:
+    envVar_envKey: 'SIT'
+    envVar_portalHostDomain: 'ractest.com.au'
+    envVar_shieldEnvName: 'sit6'
+    envVar_dbHasCluster: false
+    envVar_dbHostname: 'dcc-shdsql-s196'
+    envVar_dbName: 'shield'
+    envVar_argocdAppName: 'shieldsit6'
+    envVar_argocdBaseBranch: 'main'
+    envVar_monoPodOnlineReplicaCount: 2
+    envVar_monoPodOnlineEnablePdb: true
+    envVar_monoPodOnlineMinAvailable: 1
+    envVar_monoPodBatchReplicaCount: 1
+    envVar_monoPodWsReplicaCount: 1
+
+  # UAT
+  ${{ elseif eq(parameters.envName, 'train3') }}:
+    envVar_envKey: 'UAT'
+    envVar_portalHostDomain: 'ractest.com.au'
+    envVar_shieldEnvName: 'train3'
+    envVar_dbHasCluster: false
+    envVar_dbHostname: 'dcc-shdsql-u193'
+    envVar_dbName: 'shield'
+    envVar_argocdAppName: 'shieldtrain3'
+    envVar_argocdBaseBranch: 'main'
+    envVar_monoPodOnlineReplicaCount: 2
+    envVar_monoPodOnlineEnablePdb: false
+    envVar_monoPodOnlineMinAvailable: 0
+    envVar_monoPodBatchReplicaCount: 2
+    envVar_monoPodWsReplicaCount: 2
+
+  ${{ elseif eq(parameters.envName, 'uat5') }}:
+    envVar_envKey: 'UAT'
+    envVar_portalHostDomain: 'ractest.com.au'
+    envVar_shieldEnvName: 'uat5'
+    envVar_dbHasCluster: false
+    envVar_dbHostname: 'dcc-shdsql-u195'
+    envVar_dbName: 'shield'
+    envVar_argocdAppName: 'shielduat5'
+    envVar_argocdBaseBranch: 'main'
+    envVar_monoPodOnlineReplicaCount: 5
+    envVar_monoPodOnlineEnablePdb: false
+    envVar_monoPodOnlineMinAvailable: 0
+    envVar_monoPodBatchReplicaCount: 2
+    envVar_monoPodWsReplicaCount: 3
+
+  ${{ elseif eq(parameters.envName, 'uat6') }}:
+    envVar_envKey: 'UAT'
+    envVar_portalHostDomain: 'ractest.com.au'
+    envVar_shieldEnvName: 'uat6'
+    envVar_dbHasCluster: false
+    envVar_dbHostname: 'dcc-shdsql-u196'
+    envVar_dbName: 'shield'
+    envVar_argocdAppName: 'shielduat6'
+    envVar_argocdBaseBranch: 'main'
+    envVar_monoPodOnlineReplicaCount: 2
+    envVar_monoPodOnlineEnablePdb: false
+    envVar_monoPodOnlineMinAvailable: 0
+    envVar_monoPodBatchReplicaCount: 1
+    envVar_monoPodWsReplicaCount: 2
+
+  ${{ elseif eq(parameters.envName, 'uat7') }}:
+    envVar_envKey: 'UAT'
+    envVar_portalHostDomain: 'ractest.com.au'
+    envVar_shieldEnvName: 'uat7'
+    envVar_dbHasCluster: false
+    envVar_dbHostname: 'dcc-shdsql-u197'
+    envVar_dbName: 'shield'
+    envVar_argocdAppName: 'shielduat7'
+    envVar_argocdBaseBranch: 'main'
+    envVar_monoPodOnlineReplicaCount: 5
+    envVar_monoPodOnlineEnablePdb: false
+    envVar_monoPodOnlineMinAvailable: 0
+    envVar_monoPodBatchReplicaCount: 2
+    envVar_monoPodWsReplicaCount: 3
+
+  # PROD - To be reviewed
+  ${{ elseif eq(parameters.envName, 'prd') }}:
+    envVar_envKey: 'PRD'
+    envVar_portalHostDomain: 'rac.com.au'
+    envVar_shieldEnvName: 'prd19'
+    envVar_dbHasCluster: false
+    envVar_dbHostname: 'shdsqlprd19-db'
+    envVar_dbName: 'shield'
+    envVar_argocdAppName: 'shieldprd19'
+    envVar_argocdBaseBranch: 'main'
+    envVar_monoPodOnlineReplicaCount: 5
+    envVar_monoPodOnlineEnablePdb: false
+    envVar_monoPodOnlineMinAvailable: 0
+    envVar_monoPodBatchReplicaCount: 2
+    envVar_monoPodWsReplicaCount: 3
+
+  ${{ elseif eq(parameters.envName, 'prdes') }}:
+    envVar_envKey: 'PRD'
+    envVar_portalHostDomain: 'rac.com.au'
+    envVar_shieldEnvName: 'prd19es'
+    envVar_dbHasCluster: false
+    envVar_dbHostname: 'dcc-shdsql-p181'
+    envVar_dbName: 'shield'
+    envVar_argocdAppName: 'shieldprd19es'
+    envVar_argocdBaseBranch: 'main'
+    envVar_monoPodOnlineReplicaCount: 5
+    envVar_monoPodOnlineEnablePdb: false
+    envVar_monoPodOnlineMinAvailable: 0
+    envVar_monoPodBatchReplicaCount: 2
+    envVar_monoPodWsReplicaCount: 3
+
+  ${{ elseif eq(parameters.envName, 'prdcutover') }}:
+    envVar_envKey: 'PRD'
+    envVar_portalHostDomain: 'rac.com.au'
+    envVar_shieldEnvName: 'prd19cutover'
+    envVar_dbHasCluster: false
+    envVar_dbHostname: 'dcc-shdsql-p182'
+    envVar_dbName: 'shield'
+    envVar_argocdAppName: 'shieldprd19cutover'
+    envVar_argocdBaseBranch: 'main'
+    envVar_monoPodOnlineReplicaCount: 4
+    envVar_monoPodOnlineEnablePdb: false
+    envVar_monoPodOnlineMinAvailable: 0
+    envVar_monoPodBatchReplicaCount: 2
+    envVar_monoPodWsReplicaCount: 2
+
+  # Default
+  ${{ else }}:
+    envVar_envKey: 'DEV'
+    envVar_portalHostDomain: 'ractest.com.au'
+    envVar_shieldEnvName: 'dev1'
+    envVar_dbHasCluster: false
+    envVar_dbHostname: 'shdsqldev1-db'
+    envVar_dbName: 'shield'
+    envVar_argocdAppName: 'shielddev1'
+    envVar_argocdBaseBranch: 'main'
+    envVar_monoPodOnlineReplicaCount: 3
+    envVar_monoPodOnlineEnablePdb: false
+    envVar_monoPodOnlineMinAvailable: 1
+    envVar_monoPodBatchReplicaCount: 1
+    envVar_monoPodWsReplicaCount: 1

@@ -1,0 +1,86 @@
+parameters:
+  - name: sqlFolder
+    displayName: 'SQL Script Added for Datafix'
+    type: string
+    default: "Specify the folder name added here"
+
+
+steps:
+  - task: PowerShell@2
+    displayName: 'Determine the SQL Folder Name'
+    inputs:
+      targetType: 'inline'
+      script: |
+        $sqlFolder = "${{parameters.sqlFolder}}"
+        $rootFolder = "$(Build.SourcesDirectory)\sqlscripts"
+        Write-Host "[INFO] Provided sqlFolder: $sqlFolder"
+
+        # Check if sqlFolder is null, empty, or 'latest'
+        if ([string]::IsNullOrWhiteSpace($sqlFolder)) {            
+            Write-Host "##vso[task.logissue type=error]SQL folder cannot be empty."
+            exit 1  # Fail the pipeline if the input folder name is null or empty
+        }else {
+            # If a specific sqlFolder is provided, check if it exists
+            $sqlFolderPath = Join-Path -Path $rootFolder -ChildPath $sqlFolder
+
+            if (-Not (Test-Path -Path $sqlFolderPath -PathType Container)) {                
+                Write-Host "##vso[task.logissue type=error]Specified SQL folder '$sqlFolder' does not exist in '$rootFolder'."
+                exit 1  # Fail the pipeline if the folder does not exist
+            }
+
+            # Check if the folder is empty
+            $folderContents = Get-ChildItem -Path $sqlFolderPath
+            if (-Not $folderContents) {                
+                Write-Host "##vso[task.logissue type=error]Specified SQL folder '$sqlFolder' is empty."
+                exit 1  # Fail the pipeline if the folder is empty
+            }
+
+            Write-Host "[SUCCESS] Using specified SQL folder: $sqlFolder"
+        }
+
+        # List all files inside sqlFolder (including subfolders, but exclude directories)
+        Write-Host "[INFO] Listing all files inside '$sqlFolderPath':"
+        Get-ChildItem -Path $sqlFolderPath -Recurse -File | ForEach-Object {
+            Write-Host $_.FullName
+        }
+
+        # Set the new sqlFolder value as a pipeline variable
+        Write-Host "##vso[task.setvariable variable=sqlFolder]$sqlFolder"
+
+    continueOnError: false
+  
+  - task: CopyFiles@2
+    name: CopyFilesToStagingDirectory
+    displayName: 'Copy files to Staging Directory'
+    inputs:
+      SourceFolder: '$(Build.SourcesDirectory)\sqlscripts\$(sqlFolder)'
+      Contents: '**'  # Copies all files and subdirectories recursively
+      TargetFolder: '$(build.artifactstagingdirectory)\$(artifactName)'
+      CleanTargetFolder: true  # Set to true if you want to clean the target folder before copying  
+
+  - task: PowerShell@2
+    name: ReportCopiedFiles
+    displayName: 'Report Copied Files'
+    inputs:
+      targetType: inline
+      displayName: 'Report Copied Files'
+      script: |
+          $destinationFolder = "$(build.artifactstagingdirectory)"
+          $copiedFiles = Get-ChildItem -Path $destinationFolder -Recurse -File
+          $fileCount = $copiedFiles.Count
+
+          Write-Host "[INFO] SQL Folder: '$(sqlFolder)'"
+          Write-Host "[INFO] Total files copied: $fileCount"
+
+          if ($fileCount -gt 0) {
+              Write-Host "[INFO] List of copied files:"
+              $copiedFiles | ForEach-Object { Write-Host $_.FullName }
+          } else {
+              Write-Host "[WARNING] No files were copied!"
+          }
+
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish SQL Scripts'
+    inputs:
+      pathToPublish: '$(Build.ArtifactStagingDirectory)\$(artifactName)'
+      artifactName: '$(artifactName)'

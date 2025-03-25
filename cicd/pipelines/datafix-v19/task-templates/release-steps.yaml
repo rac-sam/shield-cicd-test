@@ -1,0 +1,108 @@
+parameters:
+  - name: envKey
+    displayName: 'Env Key'
+    type: string
+  - name: dbHostname
+    displayName: 'DB Hostname'
+    type: string
+  - name: dbName
+    displayName: 'DB Name'
+    type: string
+  - name: shieldEnvName
+    displayName: 'Env Name'
+    type: string
+  - name: adoEnvName
+    displayName: 'ADO Env Name'
+    type: string
+  - name: releaseAgentName
+    displayName: 'Release Agent Name'
+    type: string
+
+jobs:
+  - deployment: 'DataFix'
+    displayName: 'DataFix'
+    environment: ${{ upper(parameters.adoEnvName) }}
+    timeoutInMinutes: 1440
+    pool:
+      name: ${{ parameters.releaseAgentName }}
+      demands:
+        - ShieldEnvironment -equals ${{ lower(parameters.envKey) }}
+    workspace:
+      clean: all
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+            - powershell: |
+                $DB_HOSTNAME = "${{ parameters.dbHostname }}"
+                $DB_NAME = "${{ parameters.dbName }}"
+
+                Write-Host "[INFO] DB Hostname: $DB_HOSTNAME"
+                Write-Host "[INFO] DB Name: $DB_NAME"
+
+                $artifactFolder = "$(Pipeline.Workspace)\$(artifactName)"
+                Write-Host "[INFO] Searching for SQL scripts in $artifactFolder and subfolders..."
+                
+                # Ensure Invoke-Sqlcmd is available
+                if (-not (Get-Command Invoke-Sqlcmd -ErrorAction SilentlyContinue)) {                    
+                    Write-Host "##vso[task.logissue type=error]Invoke-Sqlcmd not found. Make sure SQL Server PowerShell module is installed."
+                    exit 1
+                }
+
+                # Get all SQL files recursively
+                $files = Get-ChildItem -Path $artifactFolder -Recurse -Filter "*.sql" -File | Sort-Object FullName
+                $fileCount = $files.Count
+
+                Write-Host "[INFO] Found $fileCount SQL script(s)."
+                foreach ($file in $files) {
+                    Write-Host "[INFO] $($file.FullName)"
+                }
+
+                Write-Host "[INFO] But only name start with 'bau-' and '${{ parameters.shieldEnvName }}-' will be executed"
+
+                if ($fileCount -eq 0) {
+                    Write-Host "[WARNING] No SQL files found, exiting."
+                    exit 0
+                }
+
+
+                # Execute environment-specific files first
+                Write-Host "[INFO] Executing environment-specific SQL scripts..."
+                foreach ($file in $files) {
+                    # Match the environment name to file name
+
+                    if ($file.Name.ToLower() -match "^${{ parameters.shieldEnvName }}-.*\.sql") {                                                          
+                        Write-Host "[INFO] Executing SQL script: $($file.FullName)"
+
+                        try {
+                            Invoke-Sqlcmd -ServerInstance $DB_HOSTNAME -Database $DB_NAME -InputFile $file.FullName -TrustServerCertificate
+                            Write-Host "[SUCCESS] Executed: $($file.FullName)"
+                        } catch {                            
+                            Write-Host "##vso[task.logissue type=error]Failed to execute: $($file.FullName)"
+                            Write-Host "Exception Message: $($_.Exception.Message)"
+                            Write-Host "Detailed Error: $($Error[0])"
+                            exit 1  # Fails the pipeline
+                        }
+                    }
+                }
+
+                # Execute bau-*.sql files after the environment-specific files
+                Write-Host "[INFO] Executing bau-specific SQL scripts..."
+                foreach ($file in $files) {
+                    if ($file.Name.ToLower() -match "^bau-.*\.sql") {
+                        Write-Host "[INFO] Executing SQL script with name bau-*.sql: $($file.FullName)"
+
+                        try {
+                            Invoke-Sqlcmd -ServerInstance $DB_HOSTNAME -Database $DB_NAME -InputFile $file.FullName -TrustServerCertificate
+                            Write-Host "[SUCCESS] Executed: $($file.FullName)"
+                        } catch {                            
+                            Write-Host "##vso[task.logissue type=error]Failed to execute: $($file.FullName)"
+                            Write-Host "Exception Message: $($_.Exception.Message)"
+                            Write-Host "Detailed Error: $($Error[0])"
+                            exit 1  # Fails the pipeline
+                        }
+                    }
+                }
+
+              displayName: 'Execute SQL Script Files'
+              continueOnError: false  # Ensures the job fails if any script fails

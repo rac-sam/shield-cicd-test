@@ -1,0 +1,71 @@
+parameters:
+  - name: sqlFolder
+    displayName: 'SQL Scripts Folder Name - Ticket Number'
+    type: string
+    default: ''
+  - name: shieldEnvironments
+    type: object
+    default:
+      - dev1
+      - dev2
+      - conf2
+      - sit5
+      - int2
+      - sit6
+      - uat5
+      - uat6
+
+stages:
+  - stage: BUILD
+    displayName: 'Build'
+    pool:
+      name: Shield-Build-Agents-NPE-V2
+    jobs:
+      - job: BuildScripts
+        displayName: 'Build Scripts'
+        workspace:
+          clean: all
+        steps:
+          - template: task-templates/scripts-build-steps.yaml
+            parameters:
+              sqlFolder: ${{ parameters.sqlFolder }}
+
+
+  - ${{ each shieldEnvObj in parameters.shieldEnvironments }}:
+    - stage: ${{ upper(shieldEnvObj) }}
+      displayName: '${{ upper(shieldEnvObj) }} Datafix Deploy'
+      dependsOn:
+        - BUILD
+      variables:
+        - template: variables/datafix-v19-vars.yaml
+        - template: '../../shared/variables/shield-environments-vars.yaml'
+          parameters:
+            envName: ${{ shieldEnvObj }}
+      jobs:
+        - template: task-templates/release-steps.yaml
+          parameters:
+            envKey: $(envVar_envKey)
+            dbHostname: $(envVar_dbHostname)
+            dbName: $(envVar_dbName)
+            shieldEnvName: $(envVar_shieldEnvName)
+
+            # The adoEnvName and releaseAgentName can NOT be a dynamic value
+            # Sit5 and UAT7 with adoEnvName 'NPE-AUTO', Automatic Run
+            ${{ if eq(variables.envVar_envKey, 'PRD') }}:
+              adoEnvName: PRD              
+            ${{ elseif eq(variables.envVar_envKey, 'UAT') }}:
+              ${{ if eq(upper(shieldEnvObj), 'UAT7') }}:
+                adoEnvName: NPE-AUTO
+              ${{ else }}:
+                adoEnvName: UAT
+            ${{ else }}:
+              ${{ if eq(upper(shieldEnvObj), 'SIT5') }}:
+                adoEnvName: NPE-AUTO
+              ${{ else }}:
+                adoEnvName: NPE
+       
+            ${{ if eq(variables.envVar_envKey, 'PRD') }}:
+              releaseAgentName: Shield-Release-Agents-PRD-V2
+            ${{ else }}:
+              releaseAgentName: Shield-Release-Agents-NPE-V2
+
