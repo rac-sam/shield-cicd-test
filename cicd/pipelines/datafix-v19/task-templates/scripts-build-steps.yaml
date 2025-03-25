@@ -24,7 +24,7 @@ steps:
 
 
 
-        Write-Host "[INFO] Branch Name: $(System.PullRequest.SourceBranch)"
+        # Write-Host "[INFO] Branch Name: $(System.PullRequest.SourceBranch)"
 
         $mergeParents = git -C "$(Build.SourcesDirectory)" log --merges -n 1 --pretty=format:'%P'
 
